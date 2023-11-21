@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Hello, this is the index.html file!</h1>
+
+    <form id="fileForm">
+      <label for="fileContent">Enter content:</label>
+      <input type="text" id="fileContent" name="fileContent" />
+      <button type="button" onclick="submitFile()">Submit</button>
+    </form>
+
+    <button id="getFileList">Get File List</button>
+    <div id="fileList"></div>
+
+    <script>
+      async function submitFile() {
+        const content = document.getElementById("fileContent").value;
+        const response = await fetch("/writeFile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content }),
+        });
+        const data = await response.json();
+        alert(data.message);
+        document.getElementById("fileContent").value = ""; // Clear the input field
+      }
+
+      document
+        .getElementById("getFileList")
+        .addEventListener("click", async () => {
+          const response = await fetch("/listFiles");
+          const data = await response.json();
+
+          const fileList = document.getElementById("fileList");
+          fileList.innerHTML = "<h2>File List:</h2>";
+
+          if (data.files.length === 0) {
+            fileList.innerHTML += "<p>No files available.</p>";
+          } else {
+            data.files.forEach((file) => {
+              fileList.innerHTML += `<p><strong>${file.filename}</strong>: ${file.content}</p>`;
+            });
+          }
+        });
+    </script>
+  </body>
+</html>
