@@ -1,60 +1,73 @@
 const express = require("express");
-const fs = require("fs").promises;
-const path = require("path");
-
+const bodyParser = require("body-parser");
+const fs = require("fs");
+const path = require("path"); // Add this line
 const app = express();
-const port = 3000;
+const port = 3000; // You can change this port if needed
 
-app.use(express.json());
+app.use(bodyParser.text());
+app.use(express.static(path.join(__dirname, "/public"))); // Serve static files from the root directory
 
-// Serve static files (like index.html)
-app.use(express.static(path.join(__dirname, "public")));
+app.post("/save-drawing/:category", (req, res) => {
+  const category = req.params.category;
+  const drawing = req.body;
 
-// Create the 'content' directory if it doesn't exist
-const contentDirectory = "content";
-fs.mkdir(contentDirectory, { recursive: true })
-  .then(() => console.log(`'${contentDirectory}' directory created.`))
-  .catch((err) =>
-    console.error(`Error creating '${contentDirectory}' directory:`, err)
-  );
+  const folderPath = `./drawings/${category}`;
+  const filePath = `${folderPath}/${Date.now()}.png`; // Save as PNG for canvas dataURL
 
-app.post("/writeFile", async (req, res) => {
-  const { content } = req.body;
-
-  if (!content) {
-    return res.status(400).json({ error: "Content is required." });
+  // Create the 'drawings' folder if it doesn't exist
+  if (!fs.existsSync("./drawings")) {
+    fs.mkdirSync("./drawings");
   }
 
-  const timestamp = new Date().toLocaleString().replace(/[/\\?%*:|"<>]/g, "-"); // Format timestamp to be file-safe
-  const filename = `file_${timestamp}.txt`; // Unique filename based on timestamp
-  const filePath = path.join(contentDirectory, filename);
-
-  try {
-    await fs.writeFile(filePath, content);
-    res.status(200).json({ message: "File written successfully.", filename });
-  } catch (error) {
-    console.error("Error writing to file:", error);
-    res.status(500).json({ error: "Internal server error." });
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath);
   }
+
+  fs.writeFile(filePath, drawing, "base64", (err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error saving drawing.");
+    } else {
+      res.status(200).send("Drawing saved successfully.");
+    }
+  });
 });
 
-app.get("/listFiles", async (req, res) => {
-  try {
-    const files = await fs.readdir(contentDirectory);
-    const fileDataPromises = files.map(async (file) => {
-      const filePath = path.join(contentDirectory, file);
-      const content = await fs.readFile(filePath, "utf-8");
-      return { filename: file, content };
+// New GET endpoint to retrieve all images for a category
+app.get("/get-drawings/:category", (req, res) => {
+  const category = req.params.category;
+  const folderPath = `./drawings/${category}`;
+
+  // Check if the category folder exists
+  if (!fs.existsSync(folderPath)) {
+    res.status(404).send("Category not found.");
+    return;
+  }
+
+  // Read all files in the category folder
+  fs.readdir(folderPath, (err, files) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error reading drawings.");
+      return;
+    }
+
+    // Read the contents of each file and send as an array
+    const drawings = files.map((file) => {
+      const filePath = path.join(folderPath, file);
+      const drawing = fs.readFileSync(filePath, { encoding: "base64" });
+      return { filename: file, drawing };
     });
 
-    const fileData = await Promise.all(fileDataPromises);
-    res.status(200).json({ files: fileData });
-  } catch (error) {
-    console.error("Error reading directory:", error);
-    res.status(500).json({ error: "Internal server error." });
-  }
+    res.status(200).json(drawings);
+  });
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html")); // Adjust the filename if your HTML file has a different name
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });

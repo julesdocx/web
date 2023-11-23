@@ -1,55 +1,25 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Express File Write</title>
+    <title>AI Training Canvas</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Hello, this is the index.html file!</h1>
+    <h1>Help Train My AI</h1>
+    <div class="draw__container">
+      <p>
+        Draw a simple illustration of: <strong id="instruction">a cat</strong>
+      </p>
+      <canvas id="drawingCanvas" width="300" height="300"></canvas>
+      <div class="button__container">
+        <button class="succes" onclick="saveDrawing()">Submit</button>
+      </div>
+    </div>
 
-    <form id="fileForm">
-      <label for="fileContent">Enter content:</label>
-      <input type="text" id="fileContent" name="fileContent" />
-      <button type="button" onclick="submitFile()">Submit</button>
-    </form>
+    <div class="drawings__container" id="drawingsContainer"></div>
 
-    <button id="getFileList">Get File List</button>
-    <div id="fileList"></div>
-
-    <script>
-      async function submitFile() {
-        const content = document.getElementById("fileContent").value;
-        const response = await fetch("/writeFile", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ content }),
-        });
-        const data = await response.json();
-        alert(data.message);
-        document.getElementById("fileContent").value = ""; // Clear the input field
-      }
-
-      document
-        .getElementById("getFileList")
-        .addEventListener("click", async () => {
-          const response = await fetch("/listFiles");
-          const data = await response.json();
-
-          const fileList = document.getElementById("fileList");
-          fileList.innerHTML = "<h2>File List:</h2>";
-
-          if (data.files.length === 0) {
-            fileList.innerHTML += "<p>No files available.</p>";
-          } else {
-            data.files.forEach((file) => {
-              fileList.innerHTML += `<p><strong>${file.filename}</strong>: ${file.content}</p>`;
-            });
-          }
-        });
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
