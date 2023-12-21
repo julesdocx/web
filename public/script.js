@@ -122,6 +122,10 @@ function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
+function clearDrawing() {
+  clearCanvas(); // Call the existing clearCanvas function
+}
+
 function goToNextTopic() {
   fetchDrawingsForCurrentTopic();
   currentTopicIndex = (currentTopicIndex + 1) % topics.length;
